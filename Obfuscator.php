@@ -27,8 +27,8 @@ class Obfuscator
         }
 
         foreach ($filesToObfuscate as $file) {
-            $relativePath = $this->getRelativePath($file);
-            $outputFilePath = $this->getOutputFilePath($relativePath);
+            $fileName = basename($file);
+            $outputFilePath = $this->outputPath . DIRECTORY_SEPARATOR . $fileName;
             $this->obfuscateFile($file, $outputFilePath);
         }
     }
