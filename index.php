@@ -2,6 +2,8 @@
 
 require_once("./Obfuscator.php");
 
+use Obfuscator\Obfuscator;
+
 try {
     $inputBasePath = 'public_html';
     $outputBasePath = 'obfuscated_html';
