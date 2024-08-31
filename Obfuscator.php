@@ -10,15 +10,11 @@ class Obfuscator
 {
     private string $inputPath;
     private string $outputPath;
-    private string $encryptionKey;
-    private string $salt;
 
     public function __construct(string $inputPath, string $outputPath)
     {
         $this->inputPath = rtrim(realpath($inputPath), DIRECTORY_SEPARATOR);
         $this->outputPath = rtrim($outputPath, DIRECTORY_SEPARATOR);
-        $this->encryptionKey = $this->generateEncryptionKey();
-        $this->salt = bin2hex(random_bytes(16));
     }
 
     public function copyAndObfuscate(array $directoriesToObfuscate, array $filesToObfuscate): void
@@ -40,8 +36,9 @@ class Obfuscator
     private function obfuscateFile(string $filePath, string $outputFilePath): void
     {
         $data = $this->prepareFileContent($filePath);
-        $encodedData = $this->multiLayerEncrypt($data);
-        $obfuscatedCode = $this->generateObfuscatedCode($encodedData);
+        $encryptionKey = $this->generateEncryptionKey();
+        $encodedData = $this->multiLayerEncrypt($data, $encryptionKey);
+        $obfuscatedCode = $this->generateObfuscatedCode($encodedData, $encryptionKey);
 
         $this->writeObfuscatedFile($outputFilePath, $obfuscatedCode);
     }
@@ -103,30 +100,33 @@ class Obfuscator
         return "if (ob_get_length()) { ob_end_clean(); } ?>" . php_strip_whitespace($filePath);
     }
 
-    private function multiLayerEncrypt(string $data): string
+    private function multiLayerEncrypt(string $data, string $encryptionKey): string
     {
-        // First layer of compression and encoding
+        // First layer: Compression and Base64 encoding
         $compressedData = gzcompress($data, 9);
-        $encodedData = base64_encode($compressedData);
+        $base64EncodedData = base64_encode($compressedData);
 
-        // Add AES encryption with a dynamic key and salt
+        // Second layer: AES encryption with a unique key and salt
+        $salt = bin2hex(random_bytes(16));
         $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('AES-256-CBC'));
-        $encryptedData = openssl_encrypt($encodedData, 'AES-256-CBC', $this->encryptionKey, 0, $iv);
+        $encryptedData = openssl_encrypt($base64EncodedData, 'AES-256-CBC', $encryptionKey, 0, $iv);
 
-        return base64_encode($this->salt . $iv . $encryptedData);
+        // Third layer: Further compression and Base64 encoding
+        $finalCompressedData = gzcompress($salt . $iv . $encryptedData, 9);
+        return base64_encode($finalCompressedData);
     }
 
-    private function generateObfuscatedCode(string $encodedData): string
+    private function generateObfuscatedCode(string $encodedData, string $encryptionKey): string
     {
         return <<<PHP
 <?php
 ob_start();
 \$data = '$encodedData';
-\$decodedData = base64_decode(\$data);
+\$decodedData = gzuncompress(base64_decode(\$data));
 \$salt = substr(\$decodedData, 0, 32);
 \$iv = substr(\$decodedData, 32, 16);
 \$encryptedData = substr(\$decodedData, 48);
-\$key = '$this->encryptionKey';
+\$key = '$encryptionKey';
 \$decryptedData = openssl_decrypt(\$encryptedData, 'AES-256-CBC', \$key, 0, \$iv);
 eval(gzuncompress(base64_decode(\$decryptedData)));
 \$output = ob_get_contents();
