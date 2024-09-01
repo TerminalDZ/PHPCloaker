@@ -138,6 +138,7 @@ class Obfuscator
         $keyFilePath = $this->keyDirPath . DIRECTORY_SEPARATOR . $this->keyFileNameMap[$relativePath];
     
         $encryptedKeyFilePath = $this->encryptKeyPath($keyFilePath);
+        
     
         $variable1 = $this->generateRandomName();
         $variable2 = $this->generateRandomName();
