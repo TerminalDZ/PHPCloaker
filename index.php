@@ -5,22 +5,22 @@ require_once("./Obfuscator.php");
 use Obfuscator\Obfuscator;
 
 try {
-    $inputBasePath = 'public_html';
-    $outputBasePath = 'obfuscated_html';
+    $sourceDir = 'public_html';
+    $destinationDir = 'obfuscated_html';
+    $keyDirectory = 'keys_storage';
 
-    $directoriesToObfuscate = [
-        "$inputBasePath/app",
+    $dirsToObfuscate = [
+        "$sourceDir/app",
     ];
 
     $filesToObfuscate = [
-        "$inputBasePath/index.php"
+        "$sourceDir/index.php"
     ];
 
-    $obfuscator = new Obfuscator($inputBasePath, $outputBasePath);
-    $obfuscator->copyAndObfuscate($directoriesToObfuscate, $filesToObfuscate);
+    $obfuscator = new Obfuscator($sourceDir, $destinationDir, $keyDirectory);
+    $obfuscator->copyAndObfuscate($dirsToObfuscate, $filesToObfuscate);
 
     echo "All specified files and directories have been obfuscated successfully.";
 } catch (Exception $e) {
-    echo $e->getMessage();
+    echo "An error occurred: " . $e->getMessage();
 }
-?>
